@@ -1,0 +1,21 @@
+#!/bin/bash
+echo "Preparing environment"
+rm /tmp/authors
+rm -rf /tmp/fast-export
+rm -rf /tmp/hg-repo
+rm -rf /tmp/converted
+git clone https://github.com/frej/fast-export.git /tmp/fast-export
+echo "Cloning mercurial repository"
+hg clone $1 /tmp/hg-repo
+cd /tmp/hg-repo
+echo "Getting authors informations"
+hg log | grep user: | sort | uniq | sed 's/user: *//' > /tmp/tmp_authors
+while read -r line 
+do
+    echo "\"$line\"=\"$line\"" >> /tmp/authors
+done < /tmp/tmp_authors
+git init /tmp/converted
+cd /tmp/converted
+/tmp/fast-export/hg-fast-export.sh -r /tmp/hg-repo -A /tmp/authors --force
+git checkout HEAD
+echo "Repository converted on /tmp/converted"
